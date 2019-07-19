@@ -4,6 +4,7 @@ use rand::Rng;
 
 use crate::display::Display;
 use crate::keyboard::Keyboard;
+use crate::ram::Ram;
 
 ///
 /// CHIP-8 memory map
@@ -38,9 +39,6 @@ pub struct Cpu {
     /// program counter
     pub pc: u16,
 
-    /// 4 kb of memory
-    pub memory: [u8; 4096],
-
     /// registers usually referred to as Vx, where x is a hexadecimal digit (0 through F)
     pub v: [u8; 16],
 
@@ -56,10 +54,6 @@ pub struct Cpu {
 
     /// Sound timer
     pub st: u8,
-
-    pub display: Display,
-
-    pub keyboard: Keyboard,
 }
 
 fn read_word(memory: [u8; 4096], index: u16) -> u16 {
@@ -72,47 +66,37 @@ impl Cpu {
         Cpu {
             i: 0,
             pc: 0x200,
-            memory: [0; 4096],
             v: [0; 16],
             stack: [0; 16],
             sp: 0,
             dt: 0,
             st: 0,
-            display: Display::new(),
-            keyboard: Keyboard::new(),
         }
     }
 
     pub fn reset(&mut self) {
         self.i = 0;
         self.pc = 0x200;
-        self.memory = [0; 4096];
         self.v = [0; 16];
         self.stack = [0; 16];
         self.sp = 0;
         self.dt = 0;
         self.st = 0;
-        self.display.clear();
     }
 
-    pub fn load(&mut self, program: [u8; 4096]) {
-        self.reset();
-        self.memory = program;
-    }
-
-    pub fn execute_cycle(&mut self) {
-        let opcode = read_word(self.memory, self.pc);
+    pub fn execute_cycle(&mut self, ram: &mut Ram, keyboard: &mut Keyboard, display: &mut Display) {
+        let opcode = read_word(ram.memory, self.pc);
         self.pc += 2;
-        self.process_opcode(opcode);
+        self.process_opcode(opcode, ram, keyboard, display);
     }
 
-    fn process_opcode(&mut self, opcode: u16) {
+    fn process_opcode(&mut self, opcode: u16, ram: &mut Ram, keyboard: &mut Keyboard, display: &mut Display) {
         println!("{:x}", opcode);
         match opcode {
             0x00E0 => {
                 // 00E0 - CLS
                 // Clear the display.
-                self.display.clear();
+                display.clear();
             }
             0x00EE => {
                 // 00EE - RET
@@ -336,8 +320,8 @@ impl Cpu {
                 let from = self.i as usize;
                 let to = (self.i + n) as usize;
                 let mut bytes = Vec::new();
-                bytes.extend_from_slice(&self.memory[from..to]);
-                self.display.draw(x, y, &bytes);
+                bytes.extend_from_slice(&ram.memory[from..to]);
+                display.draw(x, y, &bytes);
             }
             0xE09E...0xEF9E => {
                 // Ex9E - SKP Vx
@@ -345,7 +329,7 @@ impl Cpu {
                 //
                 // Checks the keyboard, and if the key corresponding to the value of Vx is currently in the down position, PC is increased by 2.
                 let x = ((opcode & 0x0F00) >> 8) as usize;
-                if self.keyboard.is_pressed(self.v[x]) {
+                if keyboard.is_pressed(self.v[x]) {
                     self.pc += 2;
                 }
             }
@@ -355,7 +339,7 @@ impl Cpu {
                 //
                 // Checks the keyboard, and if the key corresponding to the value of Vx is currently in the up position, PC is increased by 2.
                 let x = ((opcode & 0x0F00) >> 8) as usize;
-                if self.keyboard.is_released(self.v[x]) {
+                if keyboard.is_released(self.v[x]) {
                     self.pc += 2;
                 }
             }
@@ -373,7 +357,7 @@ impl Cpu {
                 //
                 // All execution stops until a key is pressed, then the value of that key is stored in Vx.
                 let x = ((opcode & 0x0F00) >> 8) as usize;
-                let key_pressed = self.keyboard.wait_key();
+                let key_pressed = keyboard.wait_key();
                 self.v[x] = key_pressed;
             }
             0xF015...0xFF15 => {
@@ -417,13 +401,13 @@ impl Cpu {
                 let i = self.i as usize;
                 let mut num = self.v[x];
 
-                self.memory[i] = num / 100;
+                ram.memory[i] = num / 100;
                 num = num % 100;
 
-                self.memory[i + 1] = num / 10;
+                ram.memory[i + 1] = num / 10;
                 num = num % 10;
 
-                self.memory[i + 2] = num;
+                ram.memory[i + 2] = num;
             }
             0xF055...0xFF55 => {
                 // Fx55 - LD [I], Vx
@@ -432,7 +416,7 @@ impl Cpu {
                 // The interpreter copies the values of registers V0 through Vx into memory, starting at the address in I.
                 let x = ((opcode & 0x0F00) >> 8) as usize;
                 for i in 0..x {
-                    self.memory[self.i as usize + i] = self.v[i];
+                    ram.memory[self.i as usize + i] = self.v[i];
                 }
             }
             0xF065...0xFF65 => {
@@ -442,7 +426,7 @@ impl Cpu {
                 // The interpreter reads values from memory starting at location I into registers V0 through Vx.
                 let x = ((opcode & 0x0F00) >> 8) as usize;
                 for i in 0..x {
-                    self.v[i] = self.memory[self.i as usize + i];
+                    self.v[i] = ram.memory[self.i as usize + i];
                 }
             }
 
