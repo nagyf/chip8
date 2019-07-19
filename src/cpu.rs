@@ -446,7 +446,9 @@ impl Cpu {
                 }
             }
 
-            _ => {}
+            _ => {
+                panic!("Unknown opcode: {:x}", opcode);
+            }
         }
     }
 }
