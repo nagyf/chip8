@@ -10,7 +10,7 @@ impl Ram {
         }
     }
 
-    pub fn load_rom(&mut self, rom: [u8; 4096]) {
-        self.memory = rom;
+    pub fn load_rom(&mut self, rom: &[u8; 4096]) {
+        self.memory = (*rom).clone();
     }
 }
