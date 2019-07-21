@@ -1,7 +1,3 @@
-extern crate rand;
-
-use rand::Rng;
-
 use crate::display::Display;
 use crate::keyboard::Keyboard;
 use crate::ram::Ram;
@@ -91,7 +87,6 @@ impl Cpu {
     }
 
     fn process_opcode(&mut self, opcode: u16, ram: &mut Ram, keyboard: &mut Keyboard, display: &mut Display) {
-        println!("{:x}", opcode);
         match opcode {
             0x00E0 => {
                 // 00E0 - CLS
@@ -106,13 +101,13 @@ impl Cpu {
                 self.pc = self.stack[self.sp as usize];
                 self.sp -= 1;
             }
-            0x1000...0x1FFF => {
+            0x1000..=0x1FFF => {
                 // 1nnn - JP addr
                 // 1nnn - JP addr - Jump to location nnn.
                 // The interpreter sets the program counter to nnn.
                 self.pc = opcode & 0x0FFF;
             }
-            0x2000...0x2FFF => {
+            0x2000..=0x2FFF => {
                 // 2nnn - CALL addr
                 // Call subroutine at nnn.
                 // The interpreter increments the stack pointer, then puts the current PC on the top of the stack.
@@ -121,7 +116,7 @@ impl Cpu {
                 self.stack[self.sp as usize] = self.pc;
                 self.pc = opcode & 0x0FFF;
             }
-            0x3000...0x3FFF => {
+            0x3000..=0x3FFF => {
                 // 3xkk - SE Vx, byte
                 // Skip next instruction if Vx = kk.
                 // The interpreter compares register Vx to kk, and if they are equal, increments the program counter by 2.
@@ -131,7 +126,7 @@ impl Cpu {
                     self.pc += 2;
                 }
             }
-            0x4000...0x4FFF => {
+            0x4000..=0x4FFF => {
                 // 4xkk - SNE Vx, byte
                 // Skip next instruction if Vx != kk.
                 // The interpreter compares register Vx to kk, and if they are not equal, increments the program counter by 2.
@@ -141,7 +136,7 @@ impl Cpu {
                     self.pc += 2;
                 }
             }
-            0x5000...0x5FFF => {
+            0x5000..=0x5FFF => {
                 // 5xy0 - SE Vx, Vy
                 // Skip next instruction if Vx = Vy.
                 // The interpreter compares register Vx to register Vy, and if they are equal, increments the program counter by 2.
@@ -151,7 +146,7 @@ impl Cpu {
                     self.pc += 2;
                 }
             }
-            0x6000...0x6FFF => {
+            0x6000..=0x6FFF => {
                 // 6xkk - LD Vx, byte
                 // Set Vx = kk.
                 // The interpreter puts the value kk into register Vx.
@@ -159,7 +154,7 @@ impl Cpu {
                 let kk = (opcode & 0x00FF) as u8;
                 self.v[x as usize] = kk;
             }
-            0x7000...0x7FFF => {
+            0x7000..=0x7FFF => {
                 // 7xkk - ADD Vx, byte
                 // Set Vx = Vx + kk.
                 // Adds the value kk to the value of register Vx, then stores the result in Vx.
@@ -167,7 +162,7 @@ impl Cpu {
                 let kk = (opcode & 0x00FF) as u8;
                 self.v[x] = self.v[x].wrapping_add(kk);
             }
-            0x8000...0x8FF0 => {
+            0x8000..=0x8FF0 => {
                 // 8xy0 - LD Vx, Vy
                 // Set Vx = Vy.
                 // Stores the value of register Vy in register Vx.
@@ -175,7 +170,7 @@ impl Cpu {
                 let y = (opcode & 0x00F0) >> 4;
                 self.v[x as usize] = self.v[y as usize];
             }
-            0x8001...0x8FF1 => {
+            0x8001..=0x8FF1 => {
                 // 8xy1 - OR Vx, Vy
                 // Set Vx = Vx OR Vy.
                 //
@@ -186,7 +181,7 @@ impl Cpu {
                 let y = ((opcode & 0x00F0) >> 4) as usize;
                 self.v[x] = self.v[x] | self.v[y];
             }
-            0x8002...0x8FF2 => {
+            0x8002..=0x8FF2 => {
                 // 8xy2 - AND Vx, Vy
                 // Set Vx = Vx AND Vy.
                 //
@@ -197,7 +192,7 @@ impl Cpu {
                 let y = ((opcode & 0x00F0) >> 4) as usize;
                 self.v[x] = self.v[x] & self.v[y];
             }
-            0x8003...0x8FF3 => {
+            0x8003..=0x8FF3 => {
                 // 8xy3 - XOR Vx, Vy
                 // Set Vx = Vx XOR Vy.
                 //
@@ -208,7 +203,7 @@ impl Cpu {
                 let y = ((opcode & 0x00F0) >> 4) as usize;
                 self.v[x] = self.v[x] ^ self.v[y];
             }
-            0x8004...0x8FF4 => {
+            0x8004..=0x8FF4 => {
                 // 8xy4 - ADD Vx, Vy
                 // Set Vx = Vx + Vy, set VF = carry.
                 //
@@ -221,7 +216,7 @@ impl Cpu {
                 self.v[0xF as usize] = if result > 255 { 1 } else { 0 };
                 self.v[x] = self.v[x].wrapping_add(self.v[y]);
             }
-            0x8005...0x8FF5 => {
+            0x8005..=0x8FF5 => {
                 // 8xy5 - SUB Vx, Vy
                 // Set Vx = Vx - Vy, set VF = NOT borrow.
                 //
@@ -234,7 +229,7 @@ impl Cpu {
                 self.v[0xF as usize] = if xx > yy { 1 } else { 0 };
                 self.v[x] = xx.wrapping_sub(yy);
             }
-            0x8006...0x8FF6 => {
+            0x8006..=0x8FF6 => {
                 // 8xy6 - SHR Vx {, Vy}
                 // Set Vx = Vx SHR 1.
                 //
@@ -243,7 +238,7 @@ impl Cpu {
                 self.v[0xF as usize] = if self.v[x] & 0x01 > 0 { 1 } else { 0 };
                 self.v[x] = self.v[x] >> 1;
             }
-            0x8007...0x8FF7 => {
+            0x8007..=0x8FF7 => {
                 // 8xy7 - SUBN Vx, Vy
                 // Set Vx = Vy - Vx, set VF = NOT borrow.
                 //
@@ -256,7 +251,7 @@ impl Cpu {
                 self.v[0xF as usize] = if yy > xx { 1 } else { 0 };
                 self.v[x] = yy.wrapping_sub(xx);
             }
-            0x800E...0x8FFE => {
+            0x800E..=0x8FFE => {
                 // 8xyE - SHL Vx {, Vy}
                 // Set Vx = Vx SHL 1.
                 //
@@ -264,9 +259,9 @@ impl Cpu {
                 let x = ((opcode & 0x0F00) >> 8) as usize;
 
                 self.v[0xF as usize] = if self.v[x] & 0x80 > 0 { 1 } else { 0 };
-                self.v[x] = self.v[x] << 1;
+                self.v[x] <<= 1;
             }
-            0x9000...0x9FF0 => {
+            0x9000..=0x9FF0 => {
                 // 9xy0 - SNE Vx, Vy
                 // Skip next instruction if Vx != Vy.
                 //
@@ -278,14 +273,14 @@ impl Cpu {
                     self.pc += 2;
                 }
             }
-            0xA000...0xAFFF => {
+            0xA000..=0xAFFF => {
                 // Annn - LD I, addr
                 // Set I = nnn.
                 //
                 // The value of register I is set to nnn.
                 self.i = opcode & 0x0FFF;
             }
-            0xB000...0xBFFF => {
+            0xB000..=0xBFFF => {
                 // Bnnn - JP V0, addr
                 // Jump to location nnn + V0.
                 //
@@ -293,7 +288,7 @@ impl Cpu {
                 let delta = opcode & 0x0FFF;
                 self.pc = (self.v[0] as u16).wrapping_add(delta);
             }
-            0xC000...0xCFFF => {
+            0xC000..=0xCFFF => {
                 // Cxkk - RND Vx, byte
                 // Set Vx = random byte AND kk.
                 //
@@ -301,10 +296,12 @@ impl Cpu {
                 // The results are stored in Vx. See instruction 8xy2 for more information on AND.
                 let x = ((opcode & 0x0F00) >> 8) as usize;
                 let kk = (opcode & 0x00FF) as u8;
-                let random: u8 = rand::thread_rng().gen_range(0, 255);
+                //let random: u8 = rand::thread_rng().gen_range(0, 255);
+                // TODO
+                let random: u8 = 0x4C;
                 self.v[x] = kk & random;
             }
-            0xD000...0xDFFF => {
+            0xD000..=0xDFFF => {
                 // Dxyn - DRW Vx, Vy, nibble
                 // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
                 //
@@ -314,16 +311,19 @@ impl Cpu {
                 // VF is set to 1, otherwise it is set to 0. If the sprite is positioned so part of
                 // it is outside the coordinates of the display, it wraps around to the opposite side of the screen.
                 // See instruction 8xy3 for more information on XOR, and section 2.4, Display, for more information on the Chip-8 screen and sprites.
-                let x = ((opcode & 0x0F00) >> 8) as u8;
-                let y = ((opcode & 0x00F0) >> 4) as u8;
+                let xi = ((opcode & 0x0F00) >> 8) as usize;
+                let yi = ((opcode & 0x00F0) >> 4) as usize;
+                let x = self.v[xi] as usize;
+                let y = self.v[yi] as usize;
+
                 let n = (opcode & 0x000F) as u16;
                 let from = self.i as usize;
                 let to = (self.i + n) as usize;
-                let mut bytes = Vec::new();
-                bytes.extend_from_slice(&ram.memory[from..to]);
-                display.draw(x, y, &bytes);
+                let collision = display.draw(x, y, &ram.memory[from..to]);
+                self.v[0xF] = if collision { 1 } else { 0 };
+                //println!("{:?}", &ram.memory[from..to]);
             }
-            0xE09E...0xEF9E => {
+            0xE09E..=0xEF9E => {
                 // Ex9E - SKP Vx
                 // Skip next instruction if key with the value of Vx is pressed.
                 //
@@ -333,7 +333,7 @@ impl Cpu {
                     self.pc += 2;
                 }
             }
-            0xE0A1...0xEFA1 => {
+            0xE0A1..=0xEFA1 => {
                 // ExA1 - SKNP Vx
                 // Skip next instruction if key with the value of Vx is not pressed.
                 //
@@ -343,7 +343,7 @@ impl Cpu {
                     self.pc += 2;
                 }
             }
-            0xF007...0xFF07 => {
+            0xF007..=0xFF07 => {
                 // Fx07 - LD Vx, DT
                 // Set Vx = delay timer value.
                 //
@@ -351,7 +351,7 @@ impl Cpu {
                 let x = ((opcode & 0x0F00) >> 8) as usize;
                 self.v[x] = self.dt;
             }
-            0xF00A...0xFF0A => {
+            0xF00A..=0xFF0A => {
                 // Fx0A - LD Vx, K
                 // Wait for a key press, store the value of the key in Vx.
                 //
@@ -360,7 +360,7 @@ impl Cpu {
                 let key_pressed = keyboard.wait_key();
                 self.v[x] = key_pressed;
             }
-            0xF015...0xFF15 => {
+            0xF015..=0xFF15 => {
                 // Fx15 - LD DT, Vx
                 // Set delay timer = Vx.
                 //
@@ -368,7 +368,7 @@ impl Cpu {
                 let x = ((opcode & 0x0F00) >> 8) as usize;
                 self.dt = self.v[x];
             }
-            0xF018...0xFF18 => {
+            0xF018..=0xFF18 => {
                 // Fx18 - LD ST, Vx
                 // Set sound timer = Vx.
                 //
@@ -376,7 +376,7 @@ impl Cpu {
                 let x = ((opcode & 0x0F00) >> 8) as usize;
                 self.st = self.v[x];
             }
-            0xF01E...0xFF1E => {
+            0xF01E..=0xFF1E => {
                 // Fx1E - ADD I, Vx
                 // Set I = I + Vx.
                 //
@@ -384,14 +384,15 @@ impl Cpu {
                 let x = ((opcode & 0x0F00) >> 8) as usize;
                 self.i += self.v[x] as u16;
             }
-            0xF029...0xFF29 => {
+            0xF029..=0xFF29 => {
                 // Fx29 - LD F, Vx
                 // Set I = location of sprite for digit Vx.
                 //
                 // The value of I is set to the location for the hexadecimal sprite corresponding to the value of Vx.
-                // TODO
+                let x = ((opcode & 0x0F00) >> 8) as usize;
+                self.i = self.v[x] as u16 * 5;
             }
-            0xF033...0xFF33 => {
+            0xF033..=0xFF33 => {
                 // Fx33 - LD B, Vx
                 // Store BCD representation of Vx in memory locations I, I+1, and I+2.
                 //
@@ -399,17 +400,13 @@ impl Cpu {
                 // in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2.
                 let x = ((opcode & 0x0F00) >> 8) as usize;
                 let i = self.i as usize;
-                let mut num = self.v[x];
+                let num = self.v[x];
 
                 ram.memory[i] = num / 100;
-                num = num % 100;
-
-                ram.memory[i + 1] = num / 10;
-                num = num % 10;
-
-                ram.memory[i + 2] = num;
+                ram.memory[i + 1] = (num / 10) % 10;
+                ram.memory[i + 2] = (num % 100) % 10;
             }
-            0xF055...0xFF55 => {
+            0xF055..=0xFF55 => {
                 // Fx55 - LD [I], Vx
                 // Store registers V0 through Vx in memory starting at location I.
                 //
@@ -419,7 +416,7 @@ impl Cpu {
                     ram.memory[self.i as usize + i] = self.v[i];
                 }
             }
-            0xF065...0xFF65 => {
+            0xF065..=0xFF65 => {
                 // Fx65 - LD Vx, [I]
                 // Read registers V0 through Vx from memory starting at location I.
                 //
@@ -431,7 +428,7 @@ impl Cpu {
             }
 
             _ => {
-                panic!("Unknown opcode: {:x}", opcode);
+                //panic!("Unknown opcode: {:x}", opcode);
             }
         }
     }
